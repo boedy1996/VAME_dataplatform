@@ -38,6 +38,9 @@ RUN pip install pip --upgrade \
     && pip install pygdal==$(gdal-config --version).* \
         flower==0.9.4
 
+# install missing python packages
+# RUN pip install django-widget-tweaks django_celery_beat django_celery_results drf-spectacular django-geonode-mapstore-client==3.2.1 django_jsonfield_backport OWSLib==0.24.1        
+
 # Activate "memcached"
 RUN apt install -y memcached
 RUN pip install pylibmc \

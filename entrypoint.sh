@@ -43,6 +43,10 @@ echo MONITORING_DATA_TTL=$MONITORING_DATA_TTL
 
 invoke waitfordbs
 
+pip install django-widget-tweaks django_celery_beat django_celery_results drf-spectacular django-geonode-mapstore-client==3.2.1 django_jsonfield_backport OWSLib==0.24.1 wand
+# apt-get update && apt-get install -y ghostscript-x
+
+
 cmd="$@"
 
 echo DOCKER_ENV=$DOCKER_ENV

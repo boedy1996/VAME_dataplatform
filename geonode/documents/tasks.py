@@ -55,7 +55,7 @@ def create_document_thumbnail(self, object_id):
     except Document.DoesNotExist:
         logger.error(f"Document #{object_id} does not exist.")
         raise
-
+    logger.error(f"xxxxxxxxxxxxxx Document is : image - {document.is_image} / video - {document.is_video} / file -  {document.is_file}")
     image_path = None
     image_file = None
 
@@ -76,10 +76,13 @@ def create_document_thumbnail(self, object_id):
             logger.debug(e)
             document_location = storage.url(document.doc_file.name)
 
+        logger.error(f"xxxxxxxxxxxxxx Document location : {document_location}")
         try:
             image_path = render_document(document_location)
+            logger.error(f"xxxxxxxxxxxxxx immage_path : {image_path}")
             if image_path is not None:
                 try:
+                    logger.error(f"xxxxxxxxxxxxxx masuk kemari : {image_path}")
                     image_file = open(image_path, 'rb')
                 except Exception as e:
                     logger.debug(f"Failed to render document #{object_id}: {e}")

@@ -29,6 +29,10 @@ from threading import Timer
 from mimetypes import guess_type
 from urllib.request import pathname2url
 
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
+
 
 class ConversionError(Exception):
     """Raise when conversion was unsuccessful."""
@@ -58,35 +62,59 @@ def render_document(document_path, extension="png"):
 
     # workaround: https://github.com/dagwieers/unoconv/issues/167
     # first convert a document to PDF and continue
-    dispose_input = False
-    if extension != "pdf" and guess_mimetype(document_path) != 'application/pdf':
-        document_path = render_document(document_path, extension="pdf")
-        dispose_input = True
+    # dispose_input = False
+    # if extension != "pdf" and guess_mimetype(document_path) != 'application/pdf':
+    #     document_path = render_document(document_path, extension="pdf")
+    #     dispose_input = True
 
-    # spawn subprocess and render the document
-    output_path = None
-    if settings.UNOCONV_ENABLE:
-        timeout = None
-        _, output_path = tempfile.mkstemp(suffix=f".{extension}")
-        try:
-            unoconv = subprocess.Popen(
-                [settings.UNOCONV_EXECUTABLE, "-v", "-e", "PageRange=1-2",
-                    "-f", extension, "-o", output_path, document_path],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            timeout = Timer(settings.UNOCONV_TIMEOUT, unoconv.kill)
-            timeout.start()
-            stdout, stderr = unoconv.communicate()
-        except Exception as e:
-            traceback.print_exc()
-            raise ConversionError(str(e))
-        finally:
-            if timeout:
-                timeout.cancel()
-            if dispose_input and document_path is not None:
-                os.remove(document_path)
-    else:
-        raise NotImplementedError("unoconv is disabled. Set 'UNOCONV_ENABLE' to enable.")
+    # # spawn subprocess and render the document
+    # output_path = None
+    # if settings.UNOCONV_ENABLE:
+    #     timeout = None
+    #     _, output_path = tempfile.mkstemp(suffix=f".{extension}")
+    #     try:
+    #         unoconv = subprocess.Popen(
+    #             [settings.UNOCONV_EXECUTABLE, "-v", "-e", "PageRange=1-2",
+    #                 "-f", extension, "-o", output_path, document_path],
+    #             stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #         )
+    #         timeout = Timer(settings.UNOCONV_TIMEOUT, unoconv.kill)
+    #         timeout.start()
+    #         stdout, stderr = unoconv.communicate()
+    #     except Exception as e:
+    #         traceback.print_exc()
+    #         raise ConversionError(str(e))
+    #     finally:
+    #         if timeout:
+    #             timeout.cancel()
+    #         if dispose_input and document_path is not None:
+    #             os.remove(document_path)
+    # else:
+    #     raise NotImplementedError("unoconv is disabled. Set 'UNOCONV_ENABLE' to enable.")
+
+    # return output_path
+
+    # Change method using wand and PIL. Created by boedy1996
+    try:
+        from PIL import Image, ImageOps
+        from io import StringIO
+        from wand import image
+    except Exception as e:
+        logger.error('%s: Pillow not installed, cannot generate thumbnails.' % e)
+        return None
+
+    output_path = None 
+    if guess_mimetype(document_path) == 'application/pdf':
+        with image.Image(filename=document_path, resolution=150) as img:
+            img.compression_quality = 25
+            img.alpha_channel=False
+            img.type = 'truecolor'
+            # return img.make_blob(extension)
+            img.transform(resize='x300')
+            # imgfile = StringIO()
+            _, output_path = tempfile.mkstemp(suffix=f".{extension}")
+            # logger.error(f"xxxxxxxxxxxxxx immage_path : {output_path}")
+            img.save(filename=output_path)
 
     return output_path
 

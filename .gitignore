@@ -97,3 +97,8 @@ scripts/spcgeonode/_volume_*
 /output.bin
 
 /worker.state
+.env_development
+docker-compose-only-django.yml
+celery-cmd
+Dockerfile
+entrypoint.sh
